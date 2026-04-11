@@ -13,8 +13,8 @@
         <a href="#">Home</a>
         <a href="#">Games</a>
         <a href="#">Leaderboard</a>
-        <a href="#">Login</a>
-        <a href="#">Create Account</a>
+        <a href="javascript:void(0)" onclick="openLogin()">Login</a>
+        <a href="javascript:void(0)" onclick="openRegister()">Create Account</a>
       </div>
     </nav>
 
@@ -54,5 +54,53 @@
 
     </div>
 
+    
+
+    <div id="loginOverlay" class="overlay">
+          <div class="login-card">
+              <h2>Access terminal</h2>
+              <form>
+                  <div class="input-group">
+                      <label>Username</label>
+                      <input type="text" placeholder="Enter pilot name...">
+                  </div>
+                  <div class="input-group">
+                      <label>Password</label>
+                      <input type="password" placeholder="........">
+                  </div>
+                  <div class="button-group">
+                    <button type="button" class="init-btn">Initialize Link</button>
+                    <button type="button" onclick="closeLogin()" class="close-btn">Close</button>
+                  </div>
+              </form>
+              <p>New pilot? <a href="javascript:void(0)" onclick="openRegister()">Create Account</a></p>
+          </div>
+      </div>
+
+      <div id="registerOverlay" class="overlay">
+        <div class="login-card">
+          <h2>New Pilot Registration</h2>
+          <form id="registerForm">
+            <div class="input-group">
+              <label>Username</label>
+              <input type="text" placeholder="Choose your callsign...">
+            </div>
+            <div class="input-group">
+              <label>Password</label>
+              <input type="password" id="regPassword" placeholder="Minimum 8 characters">
+            </div>
+            <div class="input-group">
+              <label>Confirm Password</label>
+              <input type="password" id="confirmPassword" placeholder="Repeat password">
+            </div>
+            <div class="button-group">
+              <button type="button" class="init-btn" onclick="validateRegistration()">Create Account</button>
+              <button type="button" onclick="closeRegister()" class="close-btn">Close</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <script src="script.js"></script>"
   </body>
 </html>
