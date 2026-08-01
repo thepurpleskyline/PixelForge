@@ -1,1 +1,12 @@
 IdeaBlueprint
+# Python / Flask
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Database & local instance data
+instance/
+*.db
+*.sqlite3
