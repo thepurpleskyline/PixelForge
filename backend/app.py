@@ -10,6 +10,7 @@ from functools import wraps
 import redis
 import uuid
 from flask import send_from_directory
+from pathlib import Path
 
 frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'frontend'))
 
@@ -20,8 +21,11 @@ app = Flask(
     static_url_path='')
 
 # Connects Flask to the database file in the same folder
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'pixelforge.db')
-app.config['SECRET_KEY'] =  os.environ.get('SECRET_KEY', 'dev-key-change-this')
+BASE_DIR = Path(__file__).resolve().parent.parent
+db_path = BASE_DIR / 'instance' / 'pixelforge.db'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path.as_posix()}"
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-change-this')
 app.config['JWT_ACCESS_EXPIRES'] = timedelta(minutes=15)
 app.config['JWT_REFRESH_EXPIRES'] = timedelta(days=7)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -41,6 +45,7 @@ class Game(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     route_name = db.Column(db.String(100), nullable=False)
+    thumbnail = db.Column(db.String(200), nullable=True)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -49,17 +54,17 @@ class User(db.Model):
     password_hash = db.Column(db.String(120), nullable=False)
     refresh_token = db.Column(db.Text, nullable=True)
 
-class Score(db.Model):
-    __tablename__ = 'scores'
-    id = db.Column(db.Integer, primary_key=True)
-    score = db.Column(db.Integer, nullable=False)
-    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
-    
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
-    
-    user = db.relationship('User', backref='scores')
-    game = db.relationship('Game', backref='scores')
+#class Score(db.Model):
+#    __tablename__ = 'scores'
+#    id = db.Column(db.Integer, primary_key=True)
+#    score = db.Column(db.Integer, nullable=False)
+#    timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+#    
+#    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+#    game_id = db.Column(db.Integer, db.ForeignKey('games.id'), nullable=False)
+#    
+#    user = db.relationship('User', backref='scores')
+#    game = db.relationship('Game', backref='scores')
 
 
 def create_tokens(user_id, username):
@@ -237,9 +242,9 @@ def refresh_token():
         return jsonify({"message": f"Error: {str(e)}"}), 500
 
 
-@app.route('/api/submit-score', methods=['POST'])
-@token_required
-def submit_score(current_user):
+#@app.route('/api/submit-score', methods=['POST'])
+#@token_required
+#def submit_score(current_user):
     try:
         data = request.json
         game_session_id = data.get('game_session_id')
@@ -325,9 +330,9 @@ def logout(current_user):
         return jsonify({"message": f"Logout failed: {str(e)}"}), 500
 
 
-@app.route('/api/game/start', methods=['POST'])
-@token_required
-def start_game_session(current_user):
+#@app.route('/api/game/start', methods=['POST'])
+#@token_required
+#def start_game_session(current_user):
     try:
         data = request.json
         game_id = data.get('game_id')
@@ -368,7 +373,8 @@ def get_games():
         games_list.append({
             "id": game.id,
             "title": game.title,
-            "route": game.route_name
+            "route_name": game.route_name,
+            "thumbnail": game.thumbnail
         })
     
     return jsonify(games_list)

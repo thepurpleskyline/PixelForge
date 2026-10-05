@@ -26,38 +26,9 @@
     <!-- Status Message bar-->
      <p id="statusBanner" style="color: #00ffcc; text-align: center; font-weight: bold;"></p>
 
-    <div class="game-grid">
-
-      <div class="game-card">
-        <h3>Tetris</h3>
-        <button onclick="launchGame(1, '/games/tetris/index.html')">Play</button>
-      </div>
-
-      <div class="game-card">
-        <h3>Snake</h3>
-        <button onclick="launchGame(2, '/games/snake/index.html')">Play</button>
-      </div>
-
-      <div class="game-card">
-        <h3>Pong</h3>
-        <button onclick="launchGame(3, '/games/pong/index.html')">Play</button>
-      </div>
-
-      <div class="game-card">
-        <h3>Minesweeper</h3>
-        <button onclick="launchGame(4, '/games/minesweeper/index.html')">Play</button>    
-      </div>
-
-      <div class="game-card">
-        <h3>Pac-Man</h3>
-        <button onclick="launchGame(5, '/games/pacman/index.html')">Play</button>
-      </div>
-
-      <div class="game-card">
-        <h3>Asteroids</h3>
-        <button onclick="launchGame(6, '/games/asteroids/index.html')">Play</button>
-      </div>
-
+     <!-- Game Cards -->
+    <div id="gameGrid" class="game-grid">
+        <!-- Dynamic gamecards will load here-->
     </div>
 
     <!-- Login Modal -->
@@ -68,14 +39,14 @@
               <form>
                   <div class="input-group">
                       <label>Username</label>
-                      <input type="text" name="username" placeholder="Enter pilot name..." required>
+                      <input type="text" id="loginUsername" name="username" placeholder="Enter pilot name..." required>
                   </div>
                   <div class="input-group">
                       <label>Password</label>
-                      <input type="password" name="password" placeholder="........" required>
+                      <input type="password" id="loginPassword" name="password" placeholder="........" required>
                   </div>
                   <div class="button-group">
-                    <button type="button" class="init-btn" onclick="handlelogin()">Initialize Link</button>
+                    <button type="button" class="init-btn" onclick="handleLogin()">Initialize Link</button>
                     <button type="button" onclick="closeLogin()" class="close-btn">Close</button>
                   </div>
               </form>
@@ -90,11 +61,11 @@
           <form id="registerForm">
             <div class="input-group">
               <label>Username</label>
-              <input type="text" name="username" placeholder="Choose your callsign..." required>
+              <input type="text" id="regUsername"name="username" placeholder="Choose your callsign..." required>
             </div>
             <div class="input-group">
               <label>Password</label>
-              <input type="password" name="password" id="regPassword" placeholder="Minimum 8 characters" required>
+              <input type="password" id="regPassword" name="password" placeholder="Minimum 8 characters" required>
             </div>
             <div class="input-group">
               <label>Confirm Password</label>
@@ -109,17 +80,20 @@
       </div>
 
       <!-- Game Screen Overlay -->
-       <div id="gameoverlay" class="overlay" style="display: none;">
-        <div class="login-card" style="width: 850px; max-width: 90vw;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 id="activeGameTitle">Playing Game</h2>
-            <button type="button" onclick="closeGame()" class="close-btn">Exit Game</button>
-            </div>
-            <div class="iframe-wrapper" style="margin-top: 15px;">
-              <iframe id="gameFrame" src="" width="100%" height="500px" style="border: none; background: #000;"></iframe>
-            </div>
-          </div>
-        </div>
+      <div id="gameOverlay" class="overlay" style="display: none;">
+  <div class="login-card game-modal-card">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 id="activeGameTitle">Playing Game</h2>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" onclick="toggleFullscreen()" class="modal-btn">Fullscreen</button>
+        <button type="button" onclick="closeGame()" class="close-btn">Exit Game</button>
+      </div>
+    </div>
+    <div class="iframe-wrapper">
+      <iframe id="gameFrame" src="" allow="fullscreen"></iframe>
+    </div>
+  </div>
+</div>
 
       <script src="script.js"></script>"
   </body>

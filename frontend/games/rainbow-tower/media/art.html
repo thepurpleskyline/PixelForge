@@ -1,0 +1,158 @@
+<!doctype html><meta charset="utf-8">
+<title>Rainbow Tower — cover art generator</title>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+<canvas id="c"></canvas>
+<script>
+/* Rainbow Tower — offline art generator (cover + icon).
+   Not part of the 13 kB game: this file only produces media/*.png via
+   `node media/make.mjs` (headless Chrome screenshots). The unicorn, rainbow and
+   ledge drawing mirror src/index.html so the artwork matches the real game. */
+const Q = new URLSearchParams(location.search);
+const Wp = +Q.get('w') || 1280, Hp = +Q.get('h') || 720, MODE = Q.get('mode') || 'cover';
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+cv.width = Wp; cv.height = Hp;
+
+const BANDS=[[232,72,92],[245,150,60],[250,222,80],[95,205,120],[80,165,240],[128,116,235],[190,110,225]];
+const PLATCOLS=[[255,150,180],[255,190,120],[255,235,140],[150,230,180],[150,205,255],[200,175,255]];
+const rgb=c=>`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const cLerp=(a,b,f)=>[lerp(a[0],b[0],f),lerp(a[1],b[1],f),lerp(a[2],b[2],f)];
+function mix(base,c){ const l=.3*base[0]+.59*base[1]+.11*base[2], g=l*.74;
+  return `rgb(${g+(base[0]-g)*c|0},${g+(base[1]-g)*c|0},${g+(base[2]-g)*c|0})`; }
+let seed=7; const rng=()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+const rand=(a,b)=>a+rng()*(b-a);
+
+/* ---- the unicorn, ported from drawHorse() in src/index.html (static pose) ---- */
+function drawLeg(hx,ph,col){ ctx.strokeStyle=col; ctx.lineWidth=3.2; ctx.lineCap='round';
+  const k=Math.sin(ph), knee=6+k*2, foot=12+Math.max(0,k)*3;
+  ctx.beginPath(); ctx.moveTo(hx,6); ctx.lineTo(hx+k*3,knee); ctx.lineTo(hx+k*5,foot); ctx.stroke(); }
+function unicorn(x,y,s,gp){
+  ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<6;i++){ ctx.globalAlpha=.26*(1-i/6); ctx.strokeStyle=rgb(BANDS[i%7]); ctx.lineWidth=2.6;
+    ctx.beginPath(); ctx.arc(0,-2,17+i*3.4,0,7); ctx.stroke(); } ctx.restore();
+  const white='#fbfbff', shade='#dedcf0';
+  for(let b=0;b<7;b++){ ctx.strokeStyle=rgb(BANDS[b]); ctx.lineWidth=2.4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-14,-3+b*1.5); ctx.quadraticCurveTo(-27,1+b*1.6,-23,13+b*1.3); ctx.stroke(); } // tail
+  drawLeg(-9,gp,shade); drawLeg(-6,gp+Math.PI,shade);
+  ctx.fillStyle=white; ctx.beginPath(); ctx.ellipse(-3,2,15,9,0,0,7); ctx.fill();
+  ctx.globalAlpha=.5; ctx.fillStyle=shade; ctx.beginPath(); ctx.ellipse(-3,6,13,4,0,0,7); ctx.fill(); ctx.globalAlpha=1;
+  drawLeg(8,gp+Math.PI,white); drawLeg(5,gp,white);
+  ctx.fillStyle=white; ctx.beginPath(); ctx.moveTo(4,-3);ctx.lineTo(11,-1);ctx.lineTo(19,-10);ctx.lineTo(13,-15);ctx.closePath(); ctx.fill(); // neck
+  ctx.beginPath(); ctx.moveTo(12,-16);ctx.lineTo(17,-17);ctx.quadraticCurveTo(25,-15,25,-9);ctx.lineTo(24,-6);ctx.lineTo(16,-7);ctx.quadraticCurveTo(12,-10,12,-16);ctx.closePath(); ctx.fill(); // head
+  ctx.fillStyle='#ebb6c4'; ctx.beginPath(); ctx.ellipse(24,-8,2,2.4,0,0,7); ctx.fill(); // muzzle
+  ctx.fillStyle=white; ctx.beginPath(); ctx.moveTo(12,-15);ctx.lineTo(10,-22);ctx.lineTo(15,-18);ctx.closePath(); ctx.fill(); // ear
+  ctx.fillStyle=rgb(BANDS[6]); ctx.beginPath(); ctx.moveTo(12,-16);ctx.lineTo(11,-20);ctx.lineTo(14,-18);ctx.closePath(); ctx.fill();
+  for(let i=0;i<6;i++){ const tt=i/5, mx=4+tt*11, my=-3-tt*11; ctx.strokeStyle=rgb(BANDS[i]);
+    ctx.lineWidth=3; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx-4,my+4.6); ctx.stroke(); } // mane
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(15,-16);ctx.lineTo(20,-27);ctx.lineTo(19,-16);ctx.closePath(); ctx.fill(); // horn (glowing)
+  ctx.fillStyle='#3a4a52'; ctx.beginPath(); ctx.arc(17,-11,1.7,0,7); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(17.6,-11.6,.6,0,7); ctx.fill();
+  ctx.fillStyle='#fab4c8'; ctx.globalAlpha=.6; ctx.beginPath(); ctx.arc(14,-8,2,0,7); ctx.fill(); ctx.globalAlpha=1;
+  ctx.restore(); }
+
+/* ---- shared scene pieces ---- */
+function sky(w,h,top,bot){ const g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,rgb(top)); g.addColorStop(1,rgb(bot));
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h); }
+function stars(w,h,n){ for(let i=0;i<n;i++){ const x=rand(0,w), y=rand(0,h*.62), r=rand(.6,2.1);
+  ctx.globalAlpha=rand(.25,.95); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); } ctx.globalAlpha=1; }
+// one candy ledge wrapped on the cylinder: it curves with the surface (the front
+// of the ring sits lower) and dims toward the silhouette, like drawPlatform() does
+function ledge(cx,y,R,a0,a1,col,th){
+  const ry=R*.15, N=26;
+  for(let i=0;i<N;i++){ const t0=a0+(a1-a0)*i/N, t1=a0+(a1-a0)*(i+1)/N, d=Math.cos((t0+t1)/2);
+    if(d<=.05) continue; ctx.strokeStyle=mix(col,.30+.70*d); ctx.lineWidth=th*(.55+.45*d); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(cx+R*Math.sin(t0),y+ry*Math.cos(t0)); ctx.lineTo(cx+R*Math.sin(t1),y+ry*Math.cos(t1)); ctx.stroke(); } }
+function tower(cx,R,y0,y1,step){ // the cylinder: a shaded column + stacked candy ledges
+  ctx.save();
+  const g=ctx.createLinearGradient(cx-R,0,cx+R,0);
+  g.addColorStop(0,'rgba(30,22,60,0)'); g.addColorStop(.06,'rgba(30,22,60,.45)'); g.addColorStop(.18,'rgba(70,58,120,.26)');
+  g.addColorStop(.46,'rgba(255,248,255,.20)'); g.addColorStop(.82,'rgba(70,58,120,.26)');
+  g.addColorStop(.94,'rgba(30,22,60,.45)'); g.addColorStop(1,'rgba(30,22,60,0)');
+  ctx.fillStyle=g; ctx.fillRect(cx-R,y0,R*2,y1-y0);
+  ctx.restore();
+  let k=0; for(let y=y0;y<y1;y+=step){ const c=PLATCOLS[k%PLATCOLS.length], span=rand(1.0,1.9), mid=rand(-.75,.75);
+    ledge(cx,y,R,mid-span/2,mid+span/2,c,Math.max(5,R*.055)); k++; } }
+function rainbow(cx,cy,r,a0,a1,th,alpha){ ctx.save(); ctx.globalAlpha=alpha==null?1:alpha; ctx.lineCap='round';
+  for(let b=0;b<7;b++){ ctx.strokeStyle=rgb(BANDS[b]); ctx.lineWidth=th;
+    ctx.beginPath(); ctx.arc(cx,cy,r+b*th,a0,a1); ctx.stroke(); } ctx.restore(); }
+function water(w,h,y){ const g=ctx.createLinearGradient(0,y,0,h);
+  g.addColorStop(0,'rgba(120,205,255,.80)'); g.addColorStop(1,'rgba(30,60,150,.95)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,y);
+  for(let x=0;x<=w;x+=12) ctx.lineTo(x,y+Math.sin(x/48)*7+Math.sin(x/17)*2.5);
+  ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.75)'; ctx.lineWidth=3; ctx.beginPath();
+  for(let x=0;x<=w;x+=12){ const yy=y+Math.sin(x/48)*7+Math.sin(x/17)*2.5; x?ctx.lineTo(x,yy):ctx.moveTo(x,yy); } ctx.stroke(); }
+function sparkles(n,w,h){ for(let i=0;i<n;i++){ const x=rand(0,w), y=rand(0,h), s=rand(2,6), c=BANDS[(rng()*7)|0];
+  ctx.globalAlpha=rand(.35,.9); ctx.fillStyle=rgb(c); ctx.beginPath();
+  ctx.moveTo(x,y-s); ctx.lineTo(x+s*.35,y-s*.35); ctx.lineTo(x+s,y); ctx.lineTo(x+s*.35,y+s*.35);
+  ctx.lineTo(x,y+s); ctx.lineTo(x-s*.35,y+s*.35); ctx.lineTo(x-s,y); ctx.lineTo(x-s*.35,y-s*.35);
+  ctx.closePath(); ctx.fill(); } ctx.globalAlpha=1; }
+
+/* ---- COVER (designed at 1280x720, cover-cropped to any aspect) ---- */
+function cover(){
+  const DW=1280, DH=720, s=Math.max(Wp/DW,Hp/DH);
+  ctx.save(); ctx.translate(Wp/2,Hp/2); ctx.scale(s,s); ctx.translate(-DW/2,-DH/2);
+  sky(DW,DH,[95,120,205],[52,42,96]);
+  const dawn=ctx.createLinearGradient(0,DH*.28,0,DH); dawn.addColorStop(0,'rgba(255,150,110,0)');
+  dawn.addColorStop(.62,'rgba(255,142,105,.34)'); dawn.addColorStop(1,'rgba(120,70,150,.30)');
+  ctx.fillStyle=dawn; ctx.fillRect(0,0,DW,DH);
+  stars(DW,DH,150);
+  ctx.save(); ctx.globalAlpha=.30; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(1090,140,52,0,7); ctx.fill();
+  ctx.globalAlpha=.13; ctx.beginPath(); ctx.arc(1090,140,95,0,7); ctx.fill(); ctx.restore();
+  tower(880,255,-40,DH+60,58);                       // the rotating rainbow tower
+  rainbow(700,700,255,Math.PI*1.06,Math.PI*1.74,10); // big arc the hero is bouncing off
+  rainbow(300,520,150,Math.PI*1.15,Math.PI*1.95,7,.75);
+  unicorn(700,322,4.6,1.1);                          // hero bouncing on the arc's crest
+  sparkles(60,DW,DH);
+  water(DW,DH,DH-72);
+  const scrim=ctx.createLinearGradient(0,0,700,0); scrim.addColorStop(0,'rgba(12,9,26,.72)'); scrim.addColorStop(1,'rgba(12,9,26,0)');
+  ctx.fillStyle=scrim; ctx.fillRect(0,0,740,DH);
+  ctx.textAlign='left';
+  ctx.save(); ctx.shadowColor='rgba(8,6,20,.75)'; ctx.shadowBlur=18; ctx.shadowOffsetY=4;
+  for(let b=0;b<7;b++){ ctx.strokeStyle=rgb(BANDS[b]); ctx.lineWidth=7;
+    ctx.beginPath(); ctx.arc(290,300,108+b*8,Math.PI*1.04,Math.PI*1.96); ctx.stroke(); }
+  ctx.fillStyle='#fff'; ctx.font='bold 82px "Trebuchet MS",Verdana,sans-serif'; ctx.fillText('RAINBOW',138,354);
+  ctx.fillText('TOWER',138,432);
+  ctx.restore();
+  ctx.fillStyle='#e7e2ff'; ctx.font='26px "Trebuchet MS",Verdana,sans-serif';
+  ctx.fillText('js13kGames 2026 · unicorns & rainbows',138,482);
+  ctx.fillStyle='#ffd9a8'; ctx.font='bold 22px "Trebuchet MS",Verdana,sans-serif';
+  ctx.fillText('climb the tower · cast your own path', 138, 526);
+  ctx.restore(); }
+
+/* ---- SQUARE ICON (512 master; also the source of the favicons) ---- */
+function icon(){
+  const D=512, s=Math.min(Wp,Hp)/D;
+  ctx.save(); ctx.translate(Wp/2,Hp/2); ctx.scale(s,s); ctx.translate(-D/2,-D/2);
+  const g=ctx.createLinearGradient(0,0,0,D); g.addColorStop(0,'#6b7ad8'); g.addColorStop(1,'#231f4a');
+  ctx.fillStyle=g; ctx.fillRect(0,0,D,D);
+  stars(D,D,46);
+  tower(256,150,-20,D+30,54);
+  rainbow(256,470,150,Math.PI*1.02,Math.PI*1.98,13);
+  unicorn(250,235,4.4,1.1);
+  sparkles(26,D,D);
+  water(D,D,D-40);
+  ctx.restore(); }
+
+/* ---- MARK: the simplified icon that still reads at 16 px (favicons) ---- */
+function mark(){
+  const D=512, s=Math.min(Wp,Hp)/D;
+  ctx.save(); ctx.translate(Wp/2,Hp/2); ctx.scale(s,s); ctx.translate(-D/2,-D/2);
+  const g=ctx.createLinearGradient(0,0,0,D); g.addColorStop(0,'#4a3f8c'); g.addColorStop(1,'#1c1740');
+  ctx.fillStyle=g; ctx.fillRect(0,0,D,D);
+  const th=D*.076, r0=D*.20;
+  for(let b=0;b<7;b++){ ctx.strokeStyle=rgb(BANDS[b]); ctx.lineWidth=th;
+    ctx.beginPath(); ctx.arc(D/2,D*.995,r0+b*th,Math.PI,0); ctx.stroke(); }   // one fat rainbow arc
+  ctx.fillStyle='#f8dc6e'; ctx.beginPath();                                    // the horn, rising from the arc
+  ctx.moveTo(D/2,D*.035); ctx.lineTo(D*.568,D*.345); ctx.lineTo(D*.432,D*.345); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath();                                       // glinting tip
+  ctx.moveTo(D/2,D*.035); ctx.lineTo(D*.529,D*.17); ctx.lineTo(D*.471,D*.17); ctx.closePath(); ctx.fill();
+  ctx.restore(); }
+
+({icon,mark,cover})[MODE]();
+// Hand the PNG back as a data URL: make.mjs reads it out of the dumped DOM, so the
+// output is exactly Wp x Hp regardless of the headless viewport size.
+const out=document.createElement('pre'); out.id='png'; out.textContent=cv.toDataURL('image/png');
+document.body.appendChild(out);
+</script>

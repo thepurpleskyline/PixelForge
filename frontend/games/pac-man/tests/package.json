@@ -1,0 +1,13 @@
+{
+  "name": "pac-man-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Headless test suite for pac-man.html",
+  "scripts": {
+    "test": "PACMAN_SHOT_DIR=.shots node maze-test.js && PACMAN_SHOT_DIR=.shots node sim-test.js && PACMAN_SHOT_DIR=.shots node house-test.js && PACMAN_SHOT_DIR=.shots node shot-test.js && PACMAN_SHOT_DIR=.shots node px-audit.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "canvas": "^2.11.2"
+  }
+}

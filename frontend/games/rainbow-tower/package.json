@@ -1,0 +1,26 @@
+{
+  "name": "rainbow-tower",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "http-server src -c-1 -p 3420 -o",
+    "build": "node build.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "roadroller": "^2.1.0",
+    "terser": "^5.51.2"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^12.3.4",
+      "onFail": "download"
+    }
+  },
+  "type": "module"
+}

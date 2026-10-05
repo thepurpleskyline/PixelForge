@@ -141,101 +141,138 @@ function updateNavState() {
     }
 }
 
+async function loadGames() {
+    const gameGrid = document.getElementById('gameGrid');
+    if (!gameGrid) return;
+
+    try {
+        const response = await fetch('/api/games');
+        const games = await response.json();
+
+        gameGrid.innerHTML = ''; //Clear container
+
+        if (games.length === 0) {
+            gameGrid.innerHTML = '<p class="no-games">No games available yet.</p>';
+            return;
+        }
+
+        games.forEach(game => {
+            const card = document.createElement('div');
+            card.className = 'game-card';
+
+            // Fallback thumbnail if none is provided
+            const thumbSrc = game.thumbnail || '/img/placeholder.png';
+
+            // Build card dynamically
+            card.innerHTML = `
+                <div class="card-thumb">
+                    <img src="${thumbSrc}" alt="${game.title}" />
+                </div>
+                <div class="game-info">
+                    <h3>${game.title}</h3>
+                </div>
+                <button class="play-button" onclick="launchGame('${game.route_name}')">Play Now</button>
+            `;
+
+            gameGrid.appendChild(card);
+        });
+    } catch (err) {
+        console.error("Failed to load games:", err);
+        gameGrid.innerHTML = '<p class="error">Error loading game library.</p>';
+    }
+}
+
+// Initialize game library on page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateNavState();
+    loadGames();
+});
+
 // 4. Launch Game Session Flow
-async function launchGame(gameId, gamePath) {
+function launchGame(gamePath) {
     const token = localStorage.getItem('access_token');
 
     if (!token) {
-        alert("Authentication required. Please log in to play!");
+        alert("Authentication required. Please log in to play.");
         openLogin();
         return;
     }
 
-    try {
-        showStatus("Initializing game session...");
-        
-        // Request game session from Flask
-        const response = await fetch('/api/game/start', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ game_id: gameId })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            currentGameSessionId = data.game_session_id;
-            
-            // Set iframe src and display game modal overlay
-            document.getElementById('gameFrame').src = gamePath;
-            document.getElementById('gameOverlay').style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            showStatus("Session active. Play!");
-        } else {
-            alert(`Failed to start game session: ${data.message}`);
-            showStatus("");
-        }
-    } catch (err) {
-        alert("Error launching game session.");
-        showStatus("");
-    }
+    // Set iframe src and display overlay
+    document.getElementById('gameFrame').src = gamePath;
+    document.getElementById('gameOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
 
 function closeGame() {
     document.getElementById('gameOverlay').style.display = 'none';
     document.getElementById('gameFrame').src = '';
     document.body.style.overflow = 'auto';
-    currentGameSessionId = null;
+//  currentGameSessionId = null;
     showStatus("");
+
+    // Exit fullscreen if active when closing
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.log(err));
+    }
 }
 
-// 5. Listen for Game Over score events emitted by iframe game
-window.addEventListener('message', async (event) => {
-    if (event.data && event.data.type === 'GAME_OVER') {
-        const score = event.data.score;
-        await submitScore(score);
+// New helper function for HTML5 Fullscreen API
+function toggleFullscreen() {
+    const iframe = document.getElementById('gameFrame');
+
+    if (!document.fullscreenElement) {
+        iframe.requestFullscreen().catch(err => {
+            console.error(`Fullscreen request failed: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
     }
-});
+}
+// 5. Listen for Game Over score events emitted by iframe game
+//window.addEventListener('message', async (event) => {
+//  if (event.data && event.data.type === 'GAME_OVER') {
+//        const score = event.data.score;
+//        await submitScore(score);
+//    }
+//});
 
 // Submit Score to Flask Backend
-async function submitScore(score) {
-    const token = localStorage.getItem('access_token');
-
-    if (!currentGameSessionId || !token) {
-        showStatus("Error: No active session or user token found.");
-        return;
-    }
-
-    try {
-        showStatus("Saving score to leaderboard...");
-
-        const response = await fetch('/api/submit-score', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                game_session_id: currentGameSessionId,
-                score: score
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showStatus(`Score saved! (${score} pts)`);
-            currentGameSessionId = null; // Session used
-        } else {
-            showStatus(`Score submission error: ${data.message}`);
-        }
-    } catch (err) {
-        showStatus("Network error saving score.");
-    }
-}
+//async function submitScore(score) {
+//    const token = localStorage.getItem('access_token');
+//
+//    if (!currentGameSessionId || !token) {
+//        showStatus("Error: No active session or user token found.");
+//        return;
+//    }
+//
+//    try {
+//        showStatus("Saving score to leaderboard...");
+//
+//        const response = await fetch('/api/submit-score', {
+//            method: 'POST',
+//            headers: {
+//                'Content-Type': 'application/json',
+//                'Authorization': `Bearer ${token}`
+//            },
+//            body: JSON.stringify({
+//                game_session_id: currentGameSessionId,
+//                score: score
+//            })
+//        });
+//
+//        const data = await response.json();
+//
+//        if (response.ok) {
+//            showStatus(`Score saved! (${score} pts)`);
+//            currentGameSessionId = null; // Session used
+//        } else {
+//            showStatus(`Score submission error: ${data.message}`);
+//        }
+//    } catch (err) {
+//        showStatus("Network error saving score.");
+//    }
+//}
 
 // Run state check on DOM load
-document.addEventListener('DOMContentLoaded', updateNavState);
+//document.addEventListener('DOMContentLoaded', updateNavState);
