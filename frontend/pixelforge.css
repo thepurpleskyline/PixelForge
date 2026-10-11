@@ -27,45 +27,191 @@ h1 {
     }
 }
 .game-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 30px;
-    width: 90%;
-    margin: 40px auto;
-}
-.game-card {
-    flex: 1 1 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    max-width: 250px;
-    border: 2px solid #00ffff;
-    background-color: #242323;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px; 
     padding: 20px;
-    text-align: center;
-    border-radius: 10px;
-    transition: 0.3s;
-    animation: neonPulse 3s infinite ease-in-out;
+    justify-items: center;
 }
-.game-card:hover {
-    transform: translateY(-10px) scale(1.02);
-    border-color: #ff00cc;
-    animation: none;
+
+.tactical-card {
+    position: relative;
+    width: 260px;
+    background: #0d111a;
+    padding: 14px;
+    box-sizing: border-box;
+    clip-path: polygon(
+        16px 0, 100% 0, 
+        100% calc(100% - 16px), 
+        calc(100% - 16px) 100%, 
+        0 100%, 0 16px
+    );
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    user-select: none;
 }
-.card-thumb {
+
+.tactical-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: linear-gradient(135deg, #00f3ff 0%, rgba(0, 243, 255, 0.15) 40%, #00f3ff 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exlude;
+    clip-path: inherit;
+    pointer-events: none;
+    transition: filter 0.3s ease;
+}
+
+.chamfer-bracket-tl {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 26px;
+    height: 26px;
+    background: #00f3ff;
+    clip-path: polygon(
+        0 16px, 
+        16px 0, 
+        26px 0, 
+        26px 2px, 
+        17px 2px, 
+        2px 17px, 
+        2px 26px, 
+        0 26px
+    );
+    pointer-events: none;
+    z-index: 5;
+    filter: drop-shadow(0 0 3px #00f3ff);
+}
+
+.chamfer-bracket-br {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 26px;
+    height: 26px;
+    background: #00f3ff;
+    clip-path: polygon(
+        100% calc(100% - 16px), 
+        calc(100% - 16px) 100%, 
+        calc(100% - 26px) 100%, 
+        calc(100% - 26px) calc(100% - 2px), 
+        calc(100% - 17px) calc(100% - 2px), 
+        calc(100% - 2px) calc(100% - 17px), 
+        calc(100% - 2px) calc(100% - 26px), 
+        100% calc(100% - 26px)
+    );
+    pointer-events: none;
+    z-index: 5;
+    filter: drop-shadow(0 0 3px #00f3ff);
+}
+
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.6rem;
+    color: #00f3ff;
+    margin-bottom: 10px;
+    letter-spacing: 1.5px;
+    font-family: 'jetBrains Mono', monospace;
+}
+
+.status-block {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.screen-housing {
+    position: relative;
     width: 100%;
-    height: 160px;
+    aspect-ratio: 3 / 4;
+    background: #000;
     overflow: hidden;
-    border-radius: 8px 8px 0 0;
-    background-color: #1a1a24;
+    border: 1px solid rgba(0, 243, 255, 0.2);
 }
-.card-thumb img {
+
+.screen-housing img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
+    opacity: 0.95;
+    filter: contrast(1.1);
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    position: relative;
+    z-index: 1;
 }
+
+.laser-sweep {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        transparent 0%,
+        rgba(0, 243, 255, 0.25) 50%,
+        transparent 100%
+    );
+    transform: translateX(-100%) translateY(-100%);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 10;
+}
+
+.hud-footer {
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.game-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    font-weight: 900;
+    color: #e6f1ff;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.sys-code {
+    font-size: 0.55rem;
+    color: #00f3ff;
+    opacity: 0.8;
+}
+
+.developer-tag {
+    font-size: 0.65rem;
+    color: #4a5a75;
+    margin: 4px 0 0 0;
+    letter-spacing: 1px;
+}
+
+.tactical-card:hover {
+    transform: translateY(-6px);
+}
+
+.tactical-card:hover::before {
+    filter: drop-shadow(0 0 6px rgba(0, 243, 255, 0.6));
+}
+
+.tactical-card:hover .screen-housing img {
+    opacity: 1;
+    transform: scale(1.04);
+}
+
+.game-card:hover .laser-sweep,
+.tactical-card:hover .laser-sweep {
+    transform: translateX(100%) trasnlateY(100%);
+}
+
 button {
     background: linear-gradient(45deg, #ff00cc, #8000ff);
     color: white;

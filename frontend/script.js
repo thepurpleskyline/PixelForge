@@ -158,20 +158,42 @@ async function loadGames() {
 
         games.forEach(game => {
             const card = document.createElement('div');
-            card.className = 'game-card';
+            card.className = 'tactical-card';
+            card.setAttribute('onclick', `launchGame('${game.route_name}')`);
 
             // Fallback thumbnail if none is provided
             const thumbSrc = game.thumbnail || '/img/placeholder.png';
 
+            const developerText = game.developer ? `SYS // ${game.developer.toUpperCase()}` : 'SYS // LOCAL';
+
             // Build card dynamically
             card.innerHTML = `
-                <div class="card-thumb">
+                <!-- Angled chamfer brackets -->
+                <div class="chamfer-bracket-tl"></div>
+                <div class="chamfer-bracket-br"></div>
+
+                <!-- HUD Header -->
+                <div class="hud-header">
+                    <span>// SEC_01</span>
+                    <div class="status-block">
+                        <span>ONLINE</span>
+                    </div>
+                </div>
+
+                <!-- poster Box & Laser sheen -->
+                <div class="screen-housing">
+                    <div class="laser-sweep"></div>
                     <img src="${thumbSrc}" alt="${game.title}" />
                 </div>
-                <div class="game-info">
-                    <h3>${game.title}</h3>
+
+                <!-- HUD Footer Info -->
+                <div class="hud-footer">
+                    <div class="title-row">
+                        <h3 class="game-title">${game.title}</h3>
+                        <span class="sys-code">0x7f</span>
+                    </div>
+                    <p class="developer-tag">${developerText}</p>
                 </div>
-                <button class="play-button" onclick="launchGame('${game.route_name}')">Play Now</button>
             `;
 
             gameGrid.appendChild(card);
